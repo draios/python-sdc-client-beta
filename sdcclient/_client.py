@@ -1248,16 +1248,17 @@ class SdcClient:
             return [False, self.lasterr]
         return [True, res.json()]
 
-    def create_sysdig_capture(self, hostname, capture_name, duration, capture_filter='', folder='/'):
+    def create_sysdig_capture(self, hostname, capture_name, duration, capture_filter='', folder='/', duration_past=0):
         '''**Description**
             Create a new sysdig capture. The capture will be immediately started.
 
         **Arguments**
             - **hostname**: the hostname of the instrumented host where the capture will be taken.
             - **capture_name**: the name of the capture.
-            - **duration**: the duration of the capture, in seconds.
+            - **duration**: the number of seconds to capture from now on.
             - **capture_filter**: a sysdig filter expression.
             - **folder**: directory in the S3 bucket where the capture will be saved.
+            - **duration_past**: the number of seconds to capture before the current time. This requires that the target agent has been configured for memory dump.
 
         **Success Return Value**
             A dictionary showing the details of the new capture.
@@ -1285,6 +1286,7 @@ class SdcClient:
             'duration': duration,
             'folder': folder,
             'filters': capture_filter,
+            'pastDuration': duration_past,
             'bucketName': ''
         }
 
@@ -1292,6 +1294,42 @@ class SdcClient:
         if not self.__checkResponse(res):
             return [False, self.lasterr]
         return [True, res.json()]
+
+    def download_sysdig_capture(self, id):
+        '''**Description**
+            Dowload a sysdig capture file given its ID and saves it to disk.
+
+        **Arguments**
+            - **id**: the capture ID. You can get it as a result of create_sysdig_capture() or by calling get_sysdig_captures()
+
+        **Success Return Value**
+            The name of the downloaded file.
+
+        **Example**
+            `examples/create_sysdig_capture.py <https://github.com/draios/python-sdc-client/blob/master/examples/create_sysdig_capture.py>`_
+        '''
+
+        #
+        # First let's get the filename
+        #
+        res = requests.get(self.url + '/api/sysdig/' + str(id), headers=self.hdrs)
+        if not self.__checkResponse(res):
+            return [False, self.lasterr]
+        
+        filename = str(id) + res.json()['dump']['name']
+
+        #
+        # Now let's donwload and save the file
+        #
+        res = requests.get(self.url + '/api/sysdig/' + str(id) + '/download', headers=self.hdrs)
+        if not self.__checkResponse(res):
+            return [False, self.lasterr]
+
+        with open(filename, 'wb') as f:
+            for chunk in res.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+        return [True, filename]
 
     def create_user_invite(self, user_email):
         '''**Description**
