@@ -1297,7 +1297,7 @@ class SdcClient:
 
     def download_sysdig_capture(self, id):
         '''**Description**
-            Dowload a sysdig capture file given its ID and saves it to disk.
+            Dowload a sysdig capture file given the capture ID and saves it to disk.
 
         **Arguments**
             - **id**: the capture ID. You can get it as a result of create_sysdig_capture() or by calling get_sysdig_captures()
@@ -1316,7 +1316,14 @@ class SdcClient:
         if not self.__checkResponse(res):
             return [False, self.lasterr]
         
-        filename = str(id) + res.json()['dump']['name']
+        bfilename = res.json()['dump']['name']
+        cmpn = bfilename.split('.')
+        if len(cmpn) == 1:
+            filename = bfilename + str(id)
+        elif len(cmpn) == 2:
+            filename = '%s_%s.%s' % (cmpn[0], str(id), cmpn[1])
+        else:
+            filename = bfilename
 
         #
         # Now let's donwload and save the file
