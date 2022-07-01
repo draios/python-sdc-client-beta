@@ -574,7 +574,7 @@ class _SdcCommon(object):
         if res[0] == False:
             return res
         userid = res[1][0]
-        res = requests.delete(self.url + '/api/users' + str(userid), headers=self.hdrs, verify=self.ssl_verify)
+        res = requests.delete(self.url + '/api/users/' + str(userid), headers=self.hdrs, verify=self.ssl_verify)
         if not self._checkResponse(res):
             return [False, self.lasterr]
         return [True, None]
@@ -672,7 +672,7 @@ class _SdcCommon(object):
         if not self._checkResponse(res):
             return [False, self.lasterr]
         u = filter(lambda x: x['username'] in users, res.json()['users'])
-        return [True, map(lambda x: x['id'], u)]
+        return [True, list(map(lambda x: x['id'], u))]
 
     def create_team(self, name, users=[], filter='', description='', show='host', theme='#7BB0B2',
                     perm_capture=False, perm_custom_events=False, perm_aws_data=False):
